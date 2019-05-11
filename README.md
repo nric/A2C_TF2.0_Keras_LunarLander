@@ -8,3 +8,4 @@ The idea to implement the model and losses this way is from:
 
 https://medium.com/@Inoryy/deep-reinforcement-learning-with-tensorflow-2-0-d8e62102680d
 
+![](learning_graph.jpg)
