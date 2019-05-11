@@ -15,7 +15,9 @@ import tensorflow.keras.optimizers as ko
 
 class Model(tf.keras.Model):
     """Define the Actor Critic Model.
-    This inherits from keras.Model. So call will 
+    This inherits from keras.Model. All layers should be defined in __init__.
+    The forward pass is then defined in call() 
+    Get  a action and a value for the state, call the get_action_value method
     """
     def __init__(self,num_action):
         super().__init__('mlp_policy')
@@ -138,6 +140,11 @@ class A2CAgent:
         return policy_loss - self.ENTROPY_FACTOR * entropy_loss
     
     def get_action_value(self, state):
+        """Returns action and value given a state. 
+        Just path though to the model. It is defined here so that there is a clear
+        agent <--> env only communication without cross references to the model underlying 
+        the agent.
+        """
         return self.model.get_action_value(state)
 
 
@@ -147,19 +154,21 @@ if __name__ == "__main__":
     BATCH_SIZE = 128 
     UPDATES = 3000 #number of training sessions (updates) in total. 
     RENDER_EVERY = 20 # render every nth episode
+
     #init env and agent. 
     logging.getLogger().setLevel(logging.INFO)
     env = gym.make(ENV_NAME)
     agent = A2CAgent(env.action_space.n)
 
+    #init variabls for the training loops
     states  = np.zeros((BATCH_SIZE, env.observation_space.shape[0]))
     actions = np.zeros(BATCH_SIZE, dtype=np.int32)
     rewards = np.zeros(BATCH_SIZE)
     dones   = np.zeros(BATCH_SIZE)
     state_values  = np.zeros(BATCH_SIZE)
-    #loop though N training steps
     episode_reward_lst = [0.0]
     next_state = env.reset()
+    #loop though N training steps
     for update in range(UPDATES):
         #gather BATCH_SIZE trajectories (SARS' paris)
         for step in range(BATCH_SIZE):
@@ -177,8 +186,6 @@ if __name__ == "__main__":
         agent.train(states, state_values,actions,rewards,dones,next_state)
             
     print("Finished training.")
-    #save model wih weights
-    agent.model.save_weights(ENV_NAME+'_model.hdf5')
     #make simple moving average over 50 episodes (smoothing) and plot
     SMA_rewards = np.convolve(episode_reward_lst, np.ones((50,))/50, mode='valid')
     plt.style.use('seaborn')
